@@ -1,65 +1,153 @@
-<h!DOCTYPE html>
+<!doctype html>
+<html lang="en">
   <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="Bleeps and sweeps. All the music that computer can do.">
     <meta name="keywords" content="Music">
     <meta name="author" content="Szymon Błaszczyński">
     <script src="./midi.js" type="text/javascript"></script>
     <script src="./Base64binary.js" type="text/javascript"></script>
-
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   </head>
-  <!-- midi notes from 21 (A0) to 108 (C8) -->
-  <!-- C4 60 - B4 71 / C5 72-->
-  <!-- C Major scale C (60), D (62), E (64), 
-    F (65), G (67), A (69), B (70), C (71) -->
   <body>
-    <p>The algorithm used to play musical notes on this website is solely owned by Szymon
-       Błaszczyński, although you are free to use it as an inspiration source in
-       the process of making music (I propose just to click the play button and wait
-       until you're happy), also listening of the source is free of charge.
-       Any other use of content of this webpage or it's source is strictly prohibited.
-
-       <br /><br />So they say in great America - see ya in court.
-    </p>
-    <button id="button">play</button>
-    <!-- TODO: tempo, scales, arps, and octaves, false keys, queue of scales and so  on -->
-    <h2>The purpose of this project (robomusic.herokuapp.com) is to provide you
-      with musical ideas that you can use, free of charge, in your musical pieces, by
-      what I mean "stealing" or in other words copying and basing on the notes that my
-      algorithm outputs after clicking the play button. This is the only way it is designed to be used.
-    </h2>
-    <p>Notes for lulzsec, lots of lulz, Anonymous and other hacking communities <small>it's free</small></p>
-    <footer>Without this library it wouldn't be that easy for me - 
-      <a href="https://github.com/mudcube/MIDI.js">MIDI.js</a></footer>
-      <script type="text/javascript">
-
-let midi = function() {
-  MIDI.loadPlugin({
-    soundfontUrl: "./soundfont/",
-    instrument: "acoustic_grand_piano",
-    onprogress: function(state, progress) {
-      console.log(state, progress);
-    },
-    onsuccess: function() {
-          
-          let playNote = function(note) {
-                  setInterval(function() {
-                    MIDI.setVolume(0, 88);
-                    let velocity = 100;
-                    let delay = 0;
+    <div class="container">
+      <img class="img-fluid" alt="Chopin's signature" src="Chopin_signature_(cleaner).svg" />
+      <h1>What's your's is your's 🎶</h1>
+      <p>The algorithm used to play musical notes on this website is solely owned by Szymon
+         Błaszczyński, although you are free to use it as an inspiration source in
+         the process of making music (I propose just to click the play button and wait
+         until you're happy), also listening of the source is free of charge.
+         Any other use of content of this webpage or it's source is strictly prohibited.
+  
+         <br /><br />So they say in great America - see ya in court.
+      </p>
+      <form>
+        <div class="form-group">
+          <label for="scaleSelection">Scale or simply put, mood...</label>
+          <select class="form-control" id="scaleSelection">
+            <option>C Major / A Minor</option>
+            <option>2</option>
+            <option>D Major / B Minor</option>
+            <option>4</option>
+            <option>5</option>
+          </select>
+        </div>
+      </form>
+      🎼<button id="play" class="btn btn-danger">play</button>🎹<button id="stop" class="btn btn-success">stop</button>🎧
+      
+      <ol id="notes"></ol>
+      <!-- TODO: tempo, scales, arps, and octaves, false keys, queue of scales and so  on -->
+      <h2>The purpose of this project <code>robomusic.herokuapp.com</code> is to provide you
+        with musical ideas that you can use, free of charge, in your musical pieces, by
+        what I mean "stealing" or in other words copying and basing on the notes that my
+        algorithm outputs after clicking the play button. This is the only way it is designed to be used.
+      </h2>
+      <p>Notes for lulzsec, lots of lulz, Anonymous and other hacking communities <small>it's free</small></p>
+    </div>
+    <script type="text/javascript">
+      let scales = {
+        cMajorAminor: [60, 62, 64, 65, 67, 69, 71, 72,
+                    74, 76, 77, 79, 81, 83, 84],
+        dMajorBminor: [62, 64, 66, 67, 69, 71, 73, 74,
+                    76, 78, 79, 81, 83, 85, 86]
+      }
+      let midi = function(playIndefinietly) {
+        let scaleSelection = document.getElementById("scaleSelection");
+        console.log(scaleSelection.value);
+        let scale;
+        switch (scaleSelection.value) {
+          case "C Major / A Minor":
+            scale = scales['cMajorAminor'];
+            break;
+          case "C# Major / A# Minor":
+            break;
+          case "D Major / B Minor":
+            scale = scales['dMajorBminor'];
+            console.log('scale fucked up from the bottom to the top, all right?');
+            break;
+          default:
+            scale = [60, 62, 64, 65, 67, 69, 71, 72,
+                    74, 76, 77, 79, 81, 83, 84];
+            break;
+        }
+        const myNode = document.getElementById("notes");
+        while (myNode.firstChild) {
+          myNode.removeChild(myNode.lastChild);
+        }
+        MIDI.loadPlugin({
+          soundfontUrl: "./soundfont/",
+          instrument: "acoustic_grand_piano",
+          onprogress: function(state, progress) {
+            console.log(state, progress);
+          },
+          onsuccess: function() {
+            MIDI.setVolume(0, 88);
+            function getRandomInt(max) {
+              return Math.floor(Math.random() * Math.floor(max));
+            }
+            let playInScale = function() {
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+              async function bars4() {
+                let play = function(key) {
+                  let noteInOctave = getRandomInt(15);
+                  let currentScale = scale;
+                  let note = scale[noteInOctave];
+                  let randomVelocity = getRandomInt(28);
+                  let velocity = 100+randomVelocity;
+                  let delay = 0;
+                  let rest = getRandomInt(100);
+                  if (rest > 16) {
                     MIDI.noteOn(0, note, velocity, delay);
-                    MIDI.noteOff(0, note, delay + 0.75);
-                  }, 3000)
+                    MIDI.noteOff(0, note, delay + 0.05);
+                    key = MIDI.noteToKey[note];
+                    console.log(key.toString());
+                    return key;
+                  } 
+                  else {
+                    key = "rest";
+                    console.log(key);
+                    return key;
+                  }
                 }
-          console.log("MIDI is ready to play")
-          playNote(60)
+                if (playIndefinietly) {
+                  setInterval(function() {
+                    let key;
+                    play(key);
+                  }, 145);
+                } 
+                else {
+                  for (let i=0;i<64;i++) {
+                    let key;
+                    key = play();
+                    let notes = document.querySelector('#notes')
+                    var node = document.createElement("LI")
+                    var textnode = document.createTextNode(key.toString())
+                    node.appendChild(textnode);
+                    notes.appendChild(node);
+                    await sleep(145);
+                  }
+                }
+              }
+              bars4();
+            }
+            console.log("MIDI is ready to play")
+            playInScale();
           }
         });
       }
-
-      let playButton = document.querySelector('#button');
-      playButton.addEventListener('click', midi);
-      
-      </script>
+              
+      let playButton = document.querySelector('#play');
+      playButton.addEventListener('click', function() {
+        midi(false);
+      });
+      let nonStopButton = document.querySelector('#stop');
+      nonStopButton.addEventListener('click', function() {
+        midi(true)
+      });        
+    </script>
   </body>
-</html>
+  <!-- https://github.com/mudcube/MIDI.js -->
+  </html>
